@@ -6,6 +6,7 @@ import rospy
 import traj_draw
 
 from geometry_msgs.msg import Twist
+from homework.msg import Num
 
 # Input data saving
 v_lin = []
@@ -29,17 +30,25 @@ start_time = time.time()
 
 def creator(data):
 
-    # Time from start
-    print((time.time() - start_time))
-    print('##################')
-    # Linear data showtime
-    print(float(data.linear.x))
-    print('##################')
-    # Angular data showtime
-    print(float(data.angular.z))
-    print('##################')
-                    
+    #  Publishing encoders data and position data for debugging
+    pub = rospy.Publisher('ashed_chatter', Num, queue_size=10)
+    r = rospy.Rate(5)  # 5 Hz
+    msg = Num()
+    msg.header.stamp = rospy.Time.now()
+    #msg.enc1 = 
+    #msg.enc2 = 
 
+    try:
+        rospy.loginfo(msg.header.stamp)
+        rospy.loginfo(msg.enc1)
+        rospy.loginfo(msg.enc2)
+        rospy.loginfo(msg.position.x)
+        rospy.loginfo(msg.position.y)
+        pub.publish(msg.header.stamp, msg.enc1, msg.enc2, msg.position.x, msg.position.y)
+    except TypeError: pass
+    r.sleep()
+
+    # Creating arrays for plotting
     v_lin.append(data.linear.x)
     w_ang.append(data.angular.z)
     delta_t.append((time.time() - start_time))
@@ -59,6 +68,7 @@ def calculations(V, omega, d_t, wlREAL, wrREAL):
         y_crd.append(y_crd[i-1] + (VREAL * math.sin(tetaREAL) * deltatime))
 
 def turtleconversion(omega, V, wlREAL, wrREAL, d_t):
+    # Computing angular velocity for the each wheel
     b = d_t/(1+d_t)
     w_l = (2 * V - omega * L) / (2 * r)
     w_r = (2 * V + omega * L) / (2 * r)
@@ -67,7 +77,7 @@ def turtleconversion(omega, V, wlREAL, wrREAL, d_t):
     return wl, wr
 
 def listener():
-
+    # Gathering turtlebot data
     rospy.init_node('listener', anonymous=True)
     rospy.Subscriber('cmd_vel', Twist, creator)
     rospy.spin()
@@ -75,6 +85,7 @@ def listener():
 
 if __name__ == '__main__':
     listener()
+    
 
 
 calculations(v_lin, w_ang, delta_t, wlREAL, wrREAL)
